@@ -3,8 +3,24 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import PropTypes, { func, object } from 'prop-types'
+import PropTypes, { element, func, object } from 'prop-types'
 import imgCat from './cat.png'
+import { 
+  BrowserRouter as Router, 
+  Routes, 
+  Route, 
+  Link, 
+  NavLink, 
+  Outlet, 
+  useNavigate, 
+  useParams, 
+  useSearchParams, 
+  useLocation,
+  useRoutes
+} from 'react-router-dom'
+import { Navigate } from 'react-router-dom';
+
+import { Spin } from "antd";
 
 // props
 // 接收参数
@@ -457,6 +473,600 @@ class HeightOrderCom extends React.Component {
   }
 }
 ReactDOM.createRoot(document.getElementById('heigherOrderCom')).render(<HeightOrderCom></HeightOrderCom>)
+
+class SetStateCom extends React.Component {
+  state = { count: 0 }
+  render() {
+    console.log('-----render-----');
+    return (
+      <>
+        <h4>setState() 是异步更新数据的</h4>
+        <p>结果：{this.state.count}</p>
+        <button onClick={this.clickHandle}>+1</button>
+        <button onClick={this.clickHandleOne}>+1</button>
+        <button onClick={this.clickHandleTwo}>+1</button>
+      </>
+    )
+  }
+  clickHandle = () => {
+    this.setState({ count: this.state.count + 1 })
+    console.log('count: ', this.state.count);
+    this.setState({ count: this.state.count + 1 })
+    console.log('count: ', this.state.count);
+  }
+  clickHandleOne = () => {
+    this.setState((state, props) => {
+      console.log('第一次 count: ', state.count);
+      return { count: state.count + 1 }
+    })
+    this.setState((state, props) => {
+      console.log('第二次 count: ', state.count);
+      return { count: state.count + 1 }
+    })
+    console.log('count: ', this.state.count);
+  }
+  clickHandleTwo = () => {
+    this.setState((state, props) => {
+      return { count: state.count + 1 }
+    }, () => {
+      console.log('count: ', this.state.count);
+    })
+  }
+}
+ReactDOM.createRoot(document.getElementById('setStateCom')).render(<SetStateCom></SetStateCom>)
+
+const eleJSX = <p style={{ color: 'red'}}>我是JSX元素</p>
+const eleCreate = React.createElement('p', { style: { color: 'red' } }, '我是createElement元素')
+console.log('JSX element: ', eleJSX);
+console.log('createElement: ', eleCreate);
+ReactDOM.createRoot(document.getElementById('transformJSX')).render((
+  <>
+    {eleJSX}
+    {eleCreate}
+  </>
+))
+
+// 组件更新机制
+class UpdateCom extends React.Component {
+  state = { color: 'skyblue'}
+  render() {
+    console.log('根组件 render');
+    return (
+      <div className='root' style={{ backgroundColor: this.state.color}}>
+        <p>根组件</p>
+        <button onClick={this.changeColor}>变色</button>
+        <div className='rootContainer'>
+          <LeftCom></LeftCom>
+          <RightCom></RightCom>
+        </div>
+      </div>
+    )
+  }
+  getColor = () => Math.floor(Math.random() * 256)
+  changeColor = () => {
+    this.setState({ color: `rgb(${this.getColor()}, ${this.getColor()}, ${this.getColor()})` })
+  }
+}
+class LeftCom extends React.Component {
+  state = { count: 0 }
+  render() {
+    console.log('左父组件 render');
+    return (
+      <div className='leftParent'>
+        <p>左父组件 count: {this.state.count}</p>
+        <button onClick={() => this.setState({count: this.state.count + 1})}>+1</button>
+        <div className='leftParentContainer'>
+          <LeftChildOne></LeftChildOne>
+          <LeftChildTwo></LeftChildTwo>
+        </div>
+      </div>
+    )
+  }
+}
+class RightCom extends React.Component {
+  state = { count: 0 }
+  render() {
+    console.log('右父组件 render');
+    return (
+      <div className='rightParent'>
+        <p>右父组件 count: {this.state.count}</p>
+        <button onClick={() => { this.setState({count: this.state.count + 1}) }}>+1</button>
+        <div className='rightParentContainer'>
+          <RightChildOne></RightChildOne>
+          <RightChildTwo></RightChildTwo>
+        </div>
+      </div>
+    )
+  }
+}
+const LeftChildOne = () => {
+  console.log('左子组件1 render');
+   return (<div className='leftChildOne'>左子组件1</div>)
+  }
+const LeftChildTwo = () => { 
+  console.log('左子组件2 render');
+  return (<div className='leftChildTwo'>左子组件2</div>)
+}
+const RightChildOne = () => { 
+  console.log('右子组件1 render');
+  return (<div className='rightChildOne'>右子组件1</div>)
+}
+const RightChildTwo = () => {
+  console.log('右子组件2 render');
+  return (<div className='rightChildTwo'>右子组件2</div>)
+}
+ReactDOM.createRoot(document.getElementById('updateCom')).render(<UpdateCom></UpdateCom>)
+
+// 组件性能优化
+class NumCom extends React.Component {
+  shouldComponentUpdate(nextProps, nextState) {
+    console.log('props: ', this.props, 'nextProps: ', nextProps);
+    // 根据 props 数据是否变化，决定渲染
+    return this.props.num !== nextProps.num
+  }
+  render() {
+    console.log('NumCom render');
+    return (<><p>随机数：{this.props.num}</p></>)
+  }
+}
+class RefreshCom extends React.Component {
+  state = { num: 1 }
+  shouldComponentUpdate(nextProps, nextState) {
+    console.log('state: ', this.state, 'nextState: ', nextState);
+    // 根据 state 数据是否变化，决定渲染
+    return this.state.num !== nextState.num
+  }
+  render() {
+    console.log('RefreshCom render');
+    return (
+      <>
+        <h4>避免不必要的重新渲染</h4>
+        <NumCom num={this.state.num}></NumCom>
+        <button onClick={() => this.setState({ num: Math.ceil(Math.random()*3)})}>生成随机数</button>
+      </>
+    )
+  }
+}
+
+// 纯组件
+class PureNum extends React.PureComponent {
+  render() {
+    console.log('PureNum render');
+    return (<><p>随机数：{this.props.num}</p></>)
+  }
+}
+class PureObjNum extends React.PureComponent {
+  render() {
+    console.log('PureObjNum render');
+    return (<><p>随机数：{this.props.numObj.num}</p></>)
+  }
+}
+class PureCom extends React.PureComponent {
+  state = {
+    num: 1,
+    numObj: { num: 1 }
+  }
+  render() {
+    console.log('PureCom render');
+    return (
+      <>
+        <h4>纯组件</h4>
+        <PureNum num={this.state.num}></PureNum>
+        <button onClick={this.handle}>生成随机数</button>
+        <PureObjNum numObj={this.state.numObj}></PureObjNum>
+        <button onClick={this.handleOne}>生成随机数对象(修改原对象)</button> <br></br>
+        <button onClick={this.handleTwo}>生成随机数对象（创建新对象）</button>
+      </>
+    )
+  }
+  handle = () => {
+    const number = Math.ceil(Math.random()*3)
+    console.log('num: ', this.state.num, ', new num: ', number);
+    this.setState({ num: number })
+  }
+  handleOne = () => {
+    // 修改原对象，错误，因为不会刷新
+    const number = Math.ceil(Math.random()*3)
+    console.log('num: ', this.state.numObj.num, ', new num: ', number);
+    const obj = this.state.numObj
+    obj.num = number
+    this.setState({ numObj: obj})
+  }
+  handleTwo = () => {
+    // 创建新对象，正确，但是也得判断，否则每次都会刷新
+    const number = Math.ceil(Math.random()*3)
+    console.log('num: ', this.state.numObj.num, ', new num: ', number);
+    if (number !== this.state.numObj.num) {
+      const obj = {...this.state.numObj, num: number}
+      this.setState({ numObj: obj})
+    }
+  }
+}
+const optimize = (
+  <>
+    <RefreshCom></RefreshCom>
+    <PureCom></PureCom>
+  </>
+)
+ReactDOM.createRoot(document.getElementById('optimizeCom')).render(optimize)
+
+// React 路由基础
+// 使用步骤
+const Home = () => (<p>首页</p>)
+const First = () => (<p>页面一</p>)
+const Second = () => (<p>页面二</p>)
+const NotFound = () => (<p>没有发现该内容</p>)
+
+const RouterStep = () => {
+  return (
+    <>
+      <Router>
+        <p>Link</p>
+        <Link to='/home'>首页</Link>
+        <Link to='/first'>页面一</Link> 
+        <Link to='/second' replace={true}>页面二</Link>
+        <Link to='/xxx'>NotFound</Link>
+        <p>NavLink</p>
+        <NavLink to='/first' style={({isActive}) => { return isActive ? { color: 'blue' } : {} }}>页面一</NavLink>
+        <NavLink to='/second' className={({isActive}) => { return isActive ? 'selected smoll' : ''}}>页面二</NavLink>
+        <Routes>
+          <Route path='/home' element={<Home></Home>}></Route>
+          <Route path='/first' element={<First></First>}></Route>
+          <Route path='/second' element={<Second></Second>}></Route>
+          <Route path='*' element={<NotFound></NotFound>}></Route>
+          </Routes>
+      </Router>
+    </>
+  )
+}
+ReactDOM.createRoot(document.getElementById('routerStep')).render(<RouterStep></RouterStep>)
+
+// 默认路由
+const DefaultRoute = () => {
+  return (
+    <>
+      <Router>
+        <Routes>
+          <Route path='/' element={<Home></Home>}></Route>
+          <Route path='*' element={<NotFound></NotFound>}></Route>
+        </Routes>
+      </Router>
+    </>
+  )
+}
+ReactDOM.createRoot(document.getElementById('defaultRoute')).render(<DefaultRoute></DefaultRoute>)
+
+// 路由重定向
+const RouteRedirect = () => {
+  return (
+    <>
+      <Router>
+        <Routes>
+          {/* <Route path='/' element={<Navigate to='/home' replace></Navigate>}></Route> */}
+          <Route path='*' element={<NotFound></NotFound>}></Route>
+        </Routes>
+      </Router>
+    </>
+  )
+}
+ReactDOM.createRoot(document.getElementById('routeRedirect')).render(<RouteRedirect></RouteRedirect>)
+
+// 匹配模式
+const MatchMode = () => {
+  return (
+    <>
+      <Router>
+        <Routes>
+          <Route path='/*' element={<Home></Home>}></Route>
+        </Routes>
+      </Router>
+    </>
+  )
+}
+ReactDOM.createRoot(document.getElementById('matchMode')).render(<MatchMode></MatchMode>)
+
+// 路由懒加载
+// 高阶组件
+const withLoading = (WrapedComponent) => {
+  class LoadingCom extends React.Component {
+    render() {
+      return (<React.Suspense fallback={<Spin></Spin>}><WrapedComponent {...this.props}></WrapedComponent></React.Suspense>)
+    }
+  }
+  LoadingCom.displayName = `WithLoading${getDisplayName(WrapedComponent)}`
+  return LoadingCom
+}
+
+// render-props 
+function FuncLoading(props) {
+  return (
+    <React.Suspense fallback={<Spin></Spin>}>
+      {props.children}
+    </React.Suspense>
+  )
+}
+const RouteLazy = () => {
+  const LazyOne = React.lazy(() => import('./LazyOne'))
+  const LazyTwo = React.lazy(() => import('./LazyTwo'))
+  const LazyThree = React.lazy(() => import('./LazyThree'))
+  const LoadingOne = withLoading(LazyTwo)
+  return (
+    <>
+      <React.Suspense fallback={<Spin></Spin>}>
+        <Router>
+          <div>
+            <Link to='/lazyOne'>懒加载一</Link>
+            <Link to='/loadingOne'>懒加载二优化</Link>
+            <Link to='/loadingTwo'>懒加载三优化</Link>
+          </div>
+          <Routes>
+            <Route path='/lazyOne' element={<LazyOne></LazyOne>}></Route>
+            <Route path='/loadingOne' element={<LoadingOne></LoadingOne>}></Route>
+            <Route path='/loadingTwo' element={<FuncLoading><LazyThree></LazyThree></FuncLoading>}></Route>
+            <Route path='*' element={<NotFound></NotFound>}></Route>
+          </Routes>
+        </Router>
+      </React.Suspense>
+    </>
+  )
+}
+ReactDOM.createRoot(document.getElementById('routeLazy')).render(<RouteLazy></RouteLazy>)
+
+// 路由嵌套
+const ContentOne = () => { return (<p>内容一</p>) }
+const ContentTwo = () => { return (<p>内容二</p>) }
+const ContentThree = () => { return (<p>内容三</p>) }
+const NoContent = () => { return (<p>没有内容</p>) }
+// 主体结构组件
+const MainBody = () => {
+  return (
+    <div className='mainBody'>
+      {/* 头部区域 */}
+      <div className='top'>
+        路由嵌套
+        <Consumer>
+          {(data) => <button onClick={data.logout}>退出</button>}
+        </Consumer>
+      </div>
+
+      {/* 左边栏区域 */}
+      <div className='leftAside'>
+        左边栏
+        <ul>
+          <li><Link to='/'>内容一</Link></li>
+          <li><Link to='/two'>内容二</Link></li>
+          <li><Link to='/three'>内容三</Link></li>
+        </ul>
+      </div>
+
+      {/* 内容区域 */}
+      <div className='content'>
+        内容
+        <Outlet></Outlet>
+      </div>
+
+      {/* 底部区域 */}
+      <div className='bottom'>底部区域</div>
+    </div>
+  )
+}
+// 登录组件
+const Login = () => {
+  return (
+    <Consumer>
+      {(data) => <button onClick={data.login}>登录</button>}
+    </Consumer>
+  )
+}
+class RouteNest extends React.Component {
+  state = { isLogin: false }
+  render() {
+    const main = <Provider value={{ logout: () => this.setState({ isLogin: false }) }}><MainBody></MainBody></Provider>
+    const login = <Provider value={{ login: () => this.setState({ isLogin: true }) }}><Login></Login></Provider>
+    const first = (<>{this.state.isLogin ? main : login}</>)
+    return (
+      <Router>
+        <Routes>
+          {/* 父路由（默认） */}
+          <Route path='/' element={first}>
+            {/* 子路由 */}
+            {/* 默认子路由 */}
+            {/* <Route path='/' element={<ContentOne></ContentOne>}></Route> */}
+            <Route index element={<ContentOne></ContentOne>}></Route>
+            <Route path='/two' element={<ContentTwo></ContentTwo>}></Route>
+            <Route path='/three' element={<ContentThree></ContentThree>}></Route>
+          </Route>
+          <Route path='/login' element={<Login></Login>}></Route>
+          <Route path='*' element={<NotFound></NotFound>}></Route>
+        </Routes>
+      </Router>
+    )
+  }
+}
+ReactDOM.createRoot(document.getElementById('routeNest')).render(<RouteNest></RouteNest>)
+
+// 函数式导航
+function withRouter(WrapedComponent) {
+  function ComponentWithRouter(props) {
+    const navigate = useNavigate()
+    return <WrapedComponent {...props} router={navigate}></WrapedComponent>
+  }
+  ComponentWithRouter.displayName = `WithRouter${getDisplayName(WrapedComponent)}`
+
+  return ComponentWithRouter
+}
+
+function Red() { return (<div style={{ backgroundColor: 'red', width: '100px', height: '100px' }}></div>) }
+function Green() { return (<div style={{ backgroundColor: 'green', width: '100px', height: '100px' }}></div>) }
+// 类组件
+class ClassComponent extends React.Component {
+  render() { return (<>
+    <p>类组件</p>
+    <button onClick={() => this.props.router('/red')}>红</button>
+    <button onClick={() => this.props.router('/green', { replace: true, state: { data: '数据' }})}>绿</button>
+    <button onClick={() => this.props.router(-1)}>返回</button>
+  </>) }
+}
+// 函数组件
+function FuncComponent() {
+  const navigate = useNavigate()
+  return (<>
+    <p>函数组件</p>
+    <button onClick={() => navigate('/red')}>红</button>
+    <button onClick={() => navigate('/green', { replace: true, state: { data: '数据' }})}>绿</button>
+    <button onClick={() => navigate(-1)}>返回</button>
+  </>)
+}
+function FuncRoute(props) {
+  const WithRouterCom = withRouter(ClassComponent)
+  return (
+    <Router>
+      <WithRouterCom></WithRouterCom>
+      <FuncComponent></FuncComponent>
+      <Routes>
+        <Route path='/red' element={<Red></Red>}></Route>
+        <Route path='/green' element={<Green></Green>}></Route>
+        <Route path='*' element={<NotFound></NotFound>}></Route>
+      </Routes>
+    </Router>
+  )
+}
+ReactDOM.createRoot(document.getElementById('funcRoute')).render(<FuncRoute></FuncRoute>)
+
+// 动态路径
+function Detail() { 
+  const params = useParams()
+  let value = ''
+  switch (params.id) {
+    case '1':
+      value = '一'
+      break;
+    case '2':
+      value = '二'
+      break
+    default:
+      break;
+  }
+  return (<p>详情{value}</p>) 
+}
+// search传参
+function User() {
+  const [searchParams] = useSearchParams()
+  const params = Object.fromEntries(searchParams)
+  console.log('params: ', params);
+  return (<p>id: {params.id}, name: {params.name}, age: {params.age}</p>)
+}
+// state传参
+function Content() {
+  const { state } = useLocation()
+  console.log('state: ', state);
+  return (<p>{state.content}</p>)
+}
+function ParamsCom() {
+  const navigate = useNavigate()
+  return (<>
+    <p>动态路径传参</p>
+    <Link to='/detail/1'>详情一</Link>
+    <button onClick={() => navigate('/detail/2')}>去详情二</button>
+    <p>search传参</p>
+    <Link to='/user?id=1&name=zhangsan&age=18'>用户一</Link>
+    <button onClick={() => navigate('/user?id=2&name=lisi&age=19')}>去用户二</button>
+    <p>state传参</p>
+    <Link to='/content' state={{content: '这是内容一的内容'}}>内容一</Link>
+    <button onClick={() => navigate('/content', {state: { content: '这是内容二的内容' } })}>去内容二</button>
+  </>)
+}
+function RouteParams() {
+  return (<Router>
+    <ParamsCom></ParamsCom>
+    <Routes>
+      <Route path='/detail/:id' element={<Detail></Detail>}></Route>
+      <Route path='/user' element={<User></User>}></Route>
+      <Route path='/content' element={<Content></Content>}></Route>
+      <Route path='*' element={<NotFound></NotFound>}></Route>
+    </Routes>
+  </Router>)
+}
+ReactDOM.createRoot(document.getElementById('routeParams')).render(<RouteParams></RouteParams>)
+
+// 军事新闻组件
+const Junshi = () => { return (<p>军事新闻</p>) }
+// 财经新闻组件
+const Caijin = () => { return (<p>财经新闻</p>) }
+// 体验新闻组件
+const Tiyu = () => { return (<p>体育新闻</p>) }
+// 布局组件
+const Layout = () => {
+  return (
+    <div className='mainBody'>
+      {/* 头部区域 */}
+      <div className='top'>useRoutes 配置化路由</div>
+
+      {/* 左边栏区域 */}
+      <div className='leftAside'>
+        左边栏
+        <ul>
+          <li><Link to='/'>军事</Link></li>
+          <li><Link to='/caijin'>财经</Link></li>
+          <li><Link to='/tiyu'>体育</Link></li>
+        </ul>
+      </div>
+
+      {/* 内容区域 */}
+      <div className='content'>
+        内容
+        <Outlet></Outlet>
+      </div>
+
+      {/* 底部区域 */}
+      <div className='bottom'>底部区域</div>
+    </div>
+  )
+}
+const routes = [
+  {
+    path: '/',
+    element: <Layout></Layout>,
+    children: [
+      {
+        index: true,
+        element: <Junshi></Junshi>
+      },
+      {
+        path: '/caijin',
+        element: <Caijin></Caijin>
+      },
+      {
+        path: '/tiyu',
+        element: <Tiyu></Tiyu>
+      }
+    ]
+  },
+  {
+    path: '*',
+    element: <NotFound></NotFound>
+  }
+]
+function RouteCom() {
+  console.log('RouteCom render');
+
+  // return <Routes>
+  //   <Route path='/' element={<Layout></Layout>}>
+  //     <Route index element={<Junshi></Junshi>}></Route>
+  //     <Route path='/caijin' element={<Caijin></Caijin>}></Route>
+  //     <Route path='/tiyu' element={<Tiyu></Tiyu>}></Route>
+  //   </Route>
+  //   <Route path='*' element={<NotFound></NotFound>}></Route>
+  // </Routes>
+  
+  return (<>{useRoutes(routes)}</>)
+}
+function ConfigRoute() {
+  return (<Router><RouteCom></RouteCom></Router>)
+}
+ReactDOM.createRoot(document.getElementById('configRoute')).render(<ConfigRoute></ConfigRoute>)
+
+
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

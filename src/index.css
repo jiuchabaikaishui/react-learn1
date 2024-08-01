@@ -11,3 +11,85 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.root {
+  width: 800px;
+}
+.rootContainer, .leftParentContainer, .rightParentContainer {
+  display: flex;
+}
+.leftParent {
+  flex: 1;
+  background-color: green;
+}
+.leftParentContainer > div {
+  flex: 1;
+  background-color: blue;
+  margin: 10px;
+}
+.rightParent {
+  flex: 1;
+  background-color: cyan;
+}
+.rightParentContainer > div {
+  flex: 1;
+  background-color: pink;
+  margin: 10px;
+}
+
+a {
+  margin: 5px;
+}
+.selected {
+  color: green;
+}
+.smoll {
+  font-size: 10px;
+}
+
+/* 路由嵌套 css */
+.mainBody {
+  position: relative;
+}
+.mainBody > .top {
+  background-color: red;
+  height: 64px;
+  line-height: 64px;
+  text-align: center;
+  font-size: 18px;
+  position: relative;
+}
+.mainBody > .top > button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+}
+.mainBody > .leftAside {
+  background-color: green;
+  width: 100px;
+  height: 200px;
+}
+.mainBody > .leftAside > ul {
+  list-style: none;
+  padding: 0;
+}
+.mainBody > .content {
+  background-color: blue;
+  position: absolute;
+  left: 100px;
+  top: 64px;
+  right: 0;
+  height: 200px;
+  text-align: center;
+}
+.mainBody > .bottom {
+  background-color: cyan;
+  height: 44px;
+  line-height: 44px;
+  text-align: center;
+  font-size: 12px;
+}
+
+#funcRoute button {
+  margin: 5px;
+}
