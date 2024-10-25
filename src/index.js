@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState, useReducer, createContext, useContext, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';
 import reportWebVitals from './reportWebVitals';
 import PropTypes, { element, func, object } from 'prop-types'
 import imgCat from './cat.png'
@@ -1066,7 +1065,541 @@ function ConfigRoute() {
 }
 ReactDOM.createRoot(document.getElementById('configRoute')).render(<ConfigRoute></ConfigRoute>)
 
+class StateCom extends React.Component {
+  state = { index: 0 }
+  render() {
+    return (<>
+      <p>index: {this.state.index}</p>
+      <button onClick={() => {
+        this.setState({index: this.state.index + 1})
+        setTimeout(() => {
+          // 输出 1
+          console.log('index: ', this.state.index);
+        }, 2000);
+      }}>+1</button>
+    </>)
+  }
+}
+function UseStateCom() {
+  const [i, setIndex] = useState(0)
+  return (<>
+    <p>index: {i}</p>
+    <button onClick={() => {
+      setIndex(i + 1)
+      setTimeout(() => {
+        // 输出 0
+        console.log('index: ', i);
+      }, 2000);
+    }}>+1</button>
+  </>)
+}
+// useState Hook
+function StateHook(props) {
+  const [index, setIndex] = React.useState(0)
+  return (<>
+    <StateCom></StateCom>
+    <p>index: {index}</p>
+    <button onClick={() => {
+      setIndex(index + 1)
+      setIndex(index + 1)
+      setIndex(i => i + 1)
+      setIndex((i, p) => {
+        // 不支持第二个参数 p
+        console.log('i: ', i, 'p: ', p);
+        return i + 1
+        // 不支持 更新后的回调函数
+      }, () => console.log('i: ', index))
+    }}>+1</button>
 
+    <p>类组件 延时读取 state</p>
+    <StateCom></StateCom>
+    <p>函数组件 延时读取 state</p>
+    <UseStateCom></UseStateCom>
+  </>)
+}
+ReactDOM.createRoot(document.getElementById('stateHook')).render(<StateHook name='张三'></StateHook>)
+
+
+// reducer
+function AddTask({onAddTask}) {
+  const [ task, setTask ] = useState('')
+  return <>
+    <input placeholder='添加任务' value={task} onChange={(e) => setTask(e.target.value)}></input>
+    <button style={{ marginLeft: '10px', marginBottom: '5px' }} onClick={() => {
+      onAddTask(task)
+      setTask('')
+    }}>添加</button>
+  </>
+}
+function TaskList({tasks, onChangeTask, onDeleteTask}) {
+  return <>
+    { tasks.map(t => {
+      return <Task key={t.id} task={t} onChangeTask={onChangeTask} onDeleteTask={onDeleteTask}></Task>
+    }) }
+  </>
+}
+function Task({task, onChangeTask, onDeleteTask}) {
+  const [ edit, setEdit ] = useState(false)
+  const [ text, setText ] = useState(task.text)
+  const [ done, setDone ] = useState(task.done)
+  return <div>
+    <input type='checkbox' checked={done} onChange={(e) => setDone(e.target.checked)}></input>
+    <input style={{display: edit ? 'inline-block' : 'none'}} type='text' value={text} onChange={(e) => setText(e.target.value)} ></input>
+    {edit ? null : text}
+    <button style={{ marginLeft: '10px', marginBottom: '5px' }} onClick={() => {
+      setEdit(!edit)
+      if (edit) {
+        onChangeTask({
+          id: task.id,
+          text: text,
+          done: task.done
+        })
+      }
+    }}>{edit ? '完成' : '编辑'}</button>
+    <button style={{ marginLeft: '10px', marginBottom: '5px' }} onClick={() => {onDeleteTask(task.id)}}>删除</button>
+  </div>
+}
+let nextId = 3;
+const initialTasks = [
+  {id: 0, text: '参观卡夫卡博物馆', done: true},
+  {id: 1, text: '看木偶戏', done: false},
+  {id: 2, text: '打卡列侬墙', done: false},
+];
+function TaskApp() {
+  const [tasks, setTasks] = useState(initialTasks);
+
+  function handleAddTask(text) {
+    setTasks([
+      ...tasks,
+      {
+        id: nextId++,
+        text: text,
+        done: false,
+      },
+    ]);
+  }
+
+  function handleChangeTask(task) {
+    setTasks(
+      tasks.map((t) => {
+        if (t.id === task.id) {
+          return task;
+        } else {
+          return t;
+        }
+      })
+    );
+  }
+
+  function handleDeleteTask(taskId) {
+    setTasks(tasks.filter((t) => t.id !== taskId));
+  }
+
+  return (
+    <>
+      <h4>布拉格的行程安排（useState 版本）</h4>
+      <AddTask onAddTask={handleAddTask} />
+      <TaskList
+        tasks={tasks}
+        onChangeTask={handleChangeTask}
+        onDeleteTask={handleDeleteTask}
+      />
+    </>
+  );
+}
+function TaskReducerApp() {
+  const [tasks, dispatch] = useReducer(tasksReducer, initialTasks)
+
+  function handleAddTask(text) {
+    dispatch({
+      type: 'add',
+      id: nextId++,
+      text: text
+    })
+  }
+
+  function handleChangeTask(task) {
+    dispatch({
+      type: 'change',
+      task: task
+    })
+  }
+
+  function handleDeleteTask(taskId) {
+    dispatch({
+      type: 'delete',
+      id: taskId
+    })
+  }
+
+  return (
+    <>
+      <h4>布拉格的行程安排（useReducer 版本）</h4>
+      <AddTask onAddTask={handleAddTask} />
+      <TaskList
+        tasks={tasks}
+        onChangeTask={handleChangeTask}
+        onDeleteTask={handleDeleteTask}
+      />
+    </>
+  );
+}
+function tasksReducer(tasks, action) {
+  switch (action.type) {
+    case 'add':
+      return [
+        ...tasks,
+        {
+          id: action.id,
+          text: action.text,
+          done: false
+        }
+      ]
+    case 'change':
+      return tasks.map((t) => t.id === action.id ? action.task : t)
+    case 'delete':
+      return tasks.filter((t) => t.id !== action.id)
+  
+    default:
+      throw Error('未知错误：', action.type)
+  }
+}
+const reducerHook = <>
+  <TaskApp></TaskApp>
+  <TaskReducerApp></TaskReducerApp>
+</>
+ReactDOM.createRoot(document.getElementById('reducerHook')).render(reducerHook)
+
+
+// context
+const LevelContext = createContext(1)
+
+function Heading({ children }) {
+  const level = useContext(LevelContext)
+  switch (level) {
+    case 1:
+      return <h1>{children}</h1>
+    case 2:
+      return <h2>{children}</h2>
+    case 3:
+      return <h3>{children}</h3>
+    case 4:
+      return <h4>{children}</h4>
+    case 5:
+      return <h5>{children}</h5>
+    case 6:
+      return <h6>{children}</h6>
+  
+    default:
+      throw Error('未知的 level：' + level);
+  }
+}
+
+function Section({ level, children }) {
+  console.log('children: ', children);
+  
+  return (
+    <LevelContext.Provider value={level}>
+      {children}
+    </LevelContext.Provider>
+  )
+}
+
+const contextHook = (
+  <Section level={1}>
+    <Heading>一</Heading>
+    <Section level={2}>
+      <Heading>二</Heading>
+    </Section>
+  </Section>
+)
+ReactDOM.createRoot(document.getElementById('contextHook')).render(contextHook)
+
+
+// 使用 Reducer 和 Context 拓展应用
+const TasksContext = createContext(null)
+const TasksDispatchContext = createContext(null)
+function TaskAppOne() {
+  const [tasks, dispatch] = useReducer(tasksReducer, initialTasks)
+  return (
+    <TasksContext.Provider value={tasks}>
+      <TasksDispatchContext.Provider value={dispatch}>
+      {/* …… */}
+      ……
+      </TasksDispatchContext.Provider>
+    </TasksContext.Provider>
+  )
+}
+const reducerAndContext = (
+  <TaskAppOne></TaskAppOne>
+)
+ReactDOM.createRoot(document.getElementById('reducerAndContext')).render(reducerAndContext)
+
+
+// ref 引用值
+ReactDOM.createRoot(document.getElementById('refHook')).render((<div>……</div>))
+
+// 使用 ref 操作 DOM
+// 示例一：使文本输入框获得焦点
+function RefFocus() {
+  const inputRef = useRef(null)
+  return (<>
+    <input ref={inputRef}></input>
+    <button onClick={ () => inputRef.current.focus() }>聚焦输入框</button>
+  </>)
+}
+// 示例二：滚动至一个元素
+function RefScroll() {
+  const firstCatRef = useRef(null);
+  const secondCatRef = useRef(null);
+  const thirdCatRef = useRef(null);
+
+  function handleScrollToFirstCat() {
+    firstCatRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center'
+    });
+  }
+
+  function handleScrollToSecondCat() {
+    secondCatRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center'
+    });
+  }
+
+  function handleScrollToThirdCat() {
+    thirdCatRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center'
+    });
+  }
+
+  return (
+    <>
+      <nav>
+        <button onClick={handleScrollToFirstCat}>
+          Tom
+        </button>
+        <button onClick={handleScrollToSecondCat}>
+          Maru
+        </button>
+        <button onClick={handleScrollToThirdCat}>
+          Jellylorum
+        </button>
+      </nav>
+      <div style={{ width: '400px', height: '200px', overflow: 'hidden' }}>
+        <ul style={{ listStyle: 'none', width:'600px', height: '200px', margin: '0', padding: '0' }}>
+          <li style={{ float: 'left' }}>
+            <img
+              src="https://img1.baidu.com/it/u=1499135876,4212770522&fm=253&fmt=auto&app=138&f=JPEG?w=200&h=200"
+              alt="Tom"
+              ref={firstCatRef}
+            />
+          </li>
+          <li style={{ float: 'left' }}>
+            <img
+              src="https://i02piccdn.sogoucdn.com/01bbc07842904f63"
+              alt="Maru"
+              ref={secondCatRef}
+            />
+          </li>
+          <li style={{ float: 'left' }}>
+            <img
+              src="https://img.woyaogexing.com/touxiang/fengjing/20131125/56e8975eb0720d66.jpg%21200X200.jpg"
+              alt="Jellylorum"
+              ref={thirdCatRef}
+            />
+          </li>
+        </ul>
+      </div>
+    </>
+  );
+}
+const refDom = (<>
+  <p>示例一：使文本输入框获得焦点</p>
+  <RefFocus></RefFocus>
+  <p>示例二：滚动至一个元素</p>
+  <RefScroll></RefScroll>
+</>)
+ReactDOM.createRoot(document.getElementById('refDom')).render(refDom)
+
+function VideoPlayer({ isPlaying, src }) {
+  const videoRef = useRef(null)
+  useEffect(() => {
+    isPlaying ? videoRef.current.play() : videoRef.current.pause()
+  }, [isPlaying])
+  return (<div>
+    <video style={{width:'400px', marginTop: '10px'}} ref={videoRef} src={src} muted loop playsInline></video>
+  </div>)
+}
+function EffectUse() {
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [text, setText] = useState('')
+  return (<>
+    <input value={text} onChange={e => setText(e.target.value)}></input>
+    <button onClick={() => setIsPlaying(!isPlaying)}>{isPlaying ? '暂停' : '播放'}</button>
+    <VideoPlayer isPlaying={isPlaying}
+  src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></VideoPlayer>
+  </>)
+}
+ReactDOM.createRoot(document.getElementById('effectUse')).render(<EffectUse></EffectUse>)
+
+// 自定义 Hook
+function useEffectEvent(callBack) {
+  const ref = useRef(callBack);
+  return ref.current
+}
+function useAnimationLoop(isRunning, drawFrame) {
+  const event = useEffectEvent(drawFrame)
+  useEffect(() => {
+    if (isRunning) {
+      let startTime = performance.now()
+      let frameId = null
+  
+      // 动画循环
+      function onFrame(now) {
+        const timePassed = now - startTime;
+        event(timePassed)
+        frameId = requestAnimationFrame(onFrame)
+      }
+  
+      // 开始动画
+      function start() {
+        event(0)
+        startTime = performance.now()
+        frameId = requestAnimationFrame(onFrame)
+      }
+  
+      // 终止动画
+      function stop() {
+        cancelAnimationFrame(frameId)
+        startTime = null
+        frameId = null
+      }
+  
+      start()
+  
+      return () => stop()
+    }
+  }, [isRunning])
+}
+function useFadeIn(ref, duration) {
+  // 动画
+  // useEffect(() => {
+  //   const node = ref.current
+
+  //   let startTime = performance.now()
+  //   let frameId = null
+
+  //   // 动画进度更新
+  //   function onProgress(progress) {
+  //     node.style.opacity = progress
+  //   }
+
+  //   // 动画循环
+  //   function onFrame(now) {
+  //     const timePassed = now - startTime;
+  //     const progress = Math.min(timePassed/duration, 1)
+  //     onProgress(progress)
+  //     if (progress < 1) {
+  //       frameId = requestAnimationFrame(onFrame)
+  //     }
+  //   }
+
+  //   // 开始动画
+  //   function start() {
+  //     onProgress(0)
+  //     startTime = performance.now()
+  //     frameId = requestAnimationFrame(onFrame)
+  //   }
+
+  //   // 终止动画
+  //   function stop() {
+  //     cancelAnimationFrame(frameId)
+  //     startTime = null
+  //     frameId = null
+  //   }
+
+  //   start()
+
+  //   return () => stop()
+  // }, [duration])
+
+  // 提取刷帧动画
+  const [isRunning, setIsRunning] = useState(true)
+  useAnimationLoop(isRunning, (timePassed) => {
+    const progress = Math.min(timePassed/duration, 1)
+    ref.current.style.opacity = progress
+    if (progress == 1) {
+      setIsRunning(false)
+    }
+  })
+}
+function Welcome() {
+  const ref = useRef(null)
+
+  // 原始 Effect 实现动画
+  // useEffect(() => {
+  //   const duration = 1000
+  //   const node = ref.current
+
+  //   let startTime = performance.now()
+  //   let frameId = null
+
+  //   // 动画进度更新
+  //   function onProgress(progress) {
+  //     node.style.opacity = progress
+  //   }
+
+  //   // 动画循环
+  //   function onFrame(now) {
+  //     const timePassed = now - startTime;
+  //     const progress = Math.min(timePassed/duration, 1)
+  //     onProgress(progress)
+  //     if (progress <= 1) {
+  //       frameId = requestAnimationFrame(onFrame)
+  //     }
+  //   }
+
+  //   // 开始动画
+  //   function start() {
+  //     onProgress(0)
+  //     startTime = performance.now()
+  //     frameId = requestAnimationFrame(onFrame)
+  //   }
+
+  //   // 终止动画
+  //   function stop() {
+  //     cancelAnimationFrame(frameId)
+  //     startTime = null
+  //     frameId = null
+  //   }
+
+  //   start()
+
+  //   return () => stop()
+  // }, [])
+
+  // 自定义 Hook useFadeIn 实现动画
+  useFadeIn(ref, 2000)
+
+  return (<>
+    <h1 ref={ref} style={{width: '200px', height: '100px', textAlign: 'center', lineHeight: '100px', backgroundColor: 'red'}}>Welcome</h1>
+  </>)
+}
+function CustomHook() {
+  const [show, setShow] = useState(false)
+  return (<>
+    <p>案例——实现一个 fade-in 动画</p>
+    <button onClick={() => setShow(!show)}>{show ? '隐藏' : '显示'}</button>
+    {show && <Welcome></Welcome>}
+  </>)
+}
+ReactDOM.createRoot(document.getElementById('customHook')).render(<CustomHook></CustomHook>)
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
